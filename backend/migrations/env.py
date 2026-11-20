@@ -1,40 +1,29 @@
 from logging.config import fileConfig
-from pathlib import Path
-import sys
 
 from alembic import context
 from sqlalchemy import engine_from_config, pool
 
-# Add backend/ to Python's import path.
-BACKEND_DIR = Path(__file__).resolve().parents[1]
-sys.path.insert(0, str(BACKEND_DIR))
-
 from app.core.config import settings
 from app.core.database import Base
+import app.models  # Ensures models are registered with Base.metadata
 
-# Import models so SQLAlchemy registers their tables in Base.metadata.
-from app.models import user as user_models  # noqa: F401
 
 config = context.config
 
 if config.config_file_name is not None:
     fileConfig(config.config_file_name)
 
-# This is essential for --autogenerate.
-target_metadata = Base.metadata
-
-# Read the connection URL from EKIP settings.
-database_url = settings.DATABASE_URL
-
-# Avoid ConfigParser interpolation problems with special characters.
+# Use the DATABASE_URL from the root .env file.
+# Escape percent signs for ConfigParser interpolation.
 config.set_main_option(
     "sqlalchemy.url",
-    database_url.replace("%", "%%"),
+    settings.DATABASE_URL.replace("%", "%%"),
 )
+
+target_metadata = Base.metadata
 
 
 def run_migrations_offline() -> None:
-    """Run migrations without creating a database connection."""
     url = config.get_main_option("sqlalchemy.url")
 
     context.configure(
@@ -50,9 +39,8 @@ def run_migrations_offline() -> None:
 
 
 def run_migrations_online() -> None:
-    """Run migrations using a live database connection."""
     connectable = engine_from_config(
-        config.get_section(config.config_ini_section, {}),
+        config.get_section(config.config_ini_section) or {},
         prefix="sqlalchemy.",
         poolclass=pool.NullPool,
     )

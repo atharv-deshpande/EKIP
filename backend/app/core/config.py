@@ -3,18 +3,19 @@ from pathlib import Path
 from pydantic_settings import BaseSettings, SettingsConfigDict
 
 
-# config.py -> core -> app -> backend -> EKIP
 PROJECT_ROOT = Path(__file__).resolve().parents[3]
 ENV_FILE = PROJECT_ROOT / ".env"
 
 
 class Settings(BaseSettings):
+
     APP_ENV: str = "development"
 
     DATABASE_URL: str
 
     JWT_SECRET_KEY: str
     JWT_ALGORITHM: str = "HS256"
+
     ACCESS_TOKEN_EXPIRE_MINUTES: int = 15
 
     model_config = SettingsConfigDict(
